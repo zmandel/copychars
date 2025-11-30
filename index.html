@@ -7,7 +7,7 @@
   <title>Quick Copy</title>
   <style>
     :root {
-      --base-font: clamp(7px, 2vw + 10px, 18px);
+      --base-font: clamp(7px, 2vh + 10px, 18px);
       --bg-color: #f0f0f0;
       --text-color: #111;
       --surface-color: #ffffff;
@@ -19,6 +19,8 @@
       --button-text-color: #111;
       --toast-bg: #333333;
       --toast-color: #f5f5f5;
+      --column-count: 10;
+      --cell-size: 64px;
     }
 
     :root[data-theme="dark"] {
@@ -38,26 +40,36 @@
     body {
       font-family: sans-serif;
       font-size: var(--base-font);
-      margin-left: 0.5rem;
+      margin: 0;
       background-color: var(--bg-color);
       color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 0.5rem;
+      box-sizing: border-box;
+      max-width: 100%;
     }
 
     table {
-      width: clamp(200px, 80vw, 360px);
       border-collapse: collapse;
       table-layout: fixed;
-      margin-bottom: 1rem;
+      width: calc(var(--cell-size) * var(--column-count));
+      max-width: 100%;
     }
 
     td {
-      width: 20%;
+      width: var(--cell-size);
+      height: var(--cell-size);
+      max-width: calc(90vw / var(--column-count));
+      box-sizing: border-box;
+      min-width: 0;
+      padding: 3px;
     }
 
     .key-wrapper {
       position: relative;
-      width: 100%;
-      aspect-ratio: 1 / 1;
+      height: var(--cell-size);
     }
 
     .copy-btn,
@@ -67,8 +79,8 @@
     }
 
     .copy-btn {
-      font-size: clamp(5px, 10vw, 40px);
-      padding: 0;
+      font-size: clamp(5px, calc(var(--cell-size) * 0.5), 40px);
+      padding: 0.2rem;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -116,7 +128,7 @@
       color: var(--text-color);
       text-align: center;
       font-family: monospace;
-      font-size: clamp(5px, 10vw, 40px);
+      font-size: clamp(5px, calc(var(--cell-size) * 0.5), 40px);
       box-sizing: border-box;
       line-height: 1;
     }
@@ -127,6 +139,13 @@
 
     .config-mode .edit-input {
       display: block;
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      width: 100%;
     }
 
     #configureBtn,
@@ -179,9 +198,11 @@
   <table id="charGrid">
     <tbody></tbody>
   </table>
-  <button id="configureBtn">Configure</button>
-  <button id="resetBtn">Reset</button>
-  <button id="themeToggle" aria-pressed="false">Dark mode</button>
+  <div class="controls" id="controls">
+    <button id="configureBtn" type="button">Configure</button>
+    <button id="resetBtn" type="button">Reset</button>
+    <button id="themeToggle" type="button" aria-pressed="false">Dark mode</button>
+  </div>
 
   <div id="toast" class="toast"></div>
 
@@ -190,24 +211,29 @@
     const themeStorageKey = 'copychars.theme';
     const root = document.documentElement;
     const configureBtn = document.getElementById('configureBtn');
+    const controlsPanel = document.getElementById('controls');
+    const charGrid = document.getElementById('charGrid');
+    const parseCssFloat = (value) => Number.isFinite(Number.parseFloat(value ?? '')) ? Number.parseFloat(value) : 0;
     const defaultCharacters = [
       '`', '^', '{', '}', '[', ']', ';', ':', '"', '|',
       '\\', '$', '(', ')', '<', '>', '¿', '?',
       '#', '&', '*', '=', '~', '_'
     ];
-    const columns = 5;
+    const columns = 10;
     const focusableSelector = 'a[href], area[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
     let characters = loadCharacters();
     let configureMode = false;
     const gridBody = document.querySelector('#charGrid tbody');
     const themeToggleBtn = document.getElementById('themeToggle');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    root.style.setProperty('--column-count', columns);
     applyTheme(loadTheme());
     themeToggleBtn.addEventListener('click', toggleTheme);
     prefersDark.addEventListener('change', ({ matches }) => {
       if (localStorage.getItem(themeStorageKey)) return;
       applyTheme(matches ? 'dark' : 'light');
     });
+    window.addEventListener('resize', () => updateCellSize());
     renderGrid(characters);
 
     function loadCharacters() {
@@ -277,6 +303,7 @@
         gridBody.lastElementChild.appendChild(cell);
       });
       syncConfigureState();
+      updateCellSize(list.length);
     }
 
     configureBtn.addEventListener('click', configureCharacters);
@@ -331,6 +358,32 @@
       localStorage.setItem(storageKey, JSON.stringify(characters));
       renderGrid(characters);
       return true;
+    }
+
+    function updateCellSize(totalItems = characters.length) {
+      const rows = Math.max(1, Math.ceil(totalItems / columns));
+      const gridTop = charGrid?.getBoundingClientRect().top ?? 0;
+      const controlsHeight = controlsPanel?.getBoundingClientRect().height ?? 0;
+      const bodyStyles = window.getComputedStyle(document.body);
+      const layoutGap = parseCssFloat(bodyStyles.rowGap) || parseCssFloat(bodyStyles.gap);
+      const bottomPadding = parseCssFloat(bodyStyles.paddingBottom);
+      const availableHeight = Math.max(window.innerHeight - gridTop - controlsHeight - layoutGap - bottomPadding, 80);
+      const rowOverhead = getRowOverhead();
+      const sizeFromHeight = (availableHeight - rowOverhead * rows) / rows;
+      const maxSize = 200;
+      const minSize = 36;
+      const finalSize = Math.max(minSize, Math.min(sizeFromHeight, maxSize));
+      root.style.setProperty('--cell-size', `${finalSize}px`);
+    }
+
+    function getRowOverhead() {
+      const sampleCell = charGrid?.querySelector('td');
+      if (!sampleCell) return 0;
+      const computed = window.getComputedStyle(sampleCell);
+      return parseCssFloat(computed.paddingTop)
+        + parseCssFloat(computed.paddingBottom)
+        + parseCssFloat(computed.borderTopWidth)
+        + parseCssFloat(computed.borderBottomWidth);
     }
 
     function resetCharacters() {
