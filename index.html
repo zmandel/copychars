@@ -148,6 +148,30 @@
       width: 100%;
     }
 
+    .column-config {
+      display: none;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .column-config label {
+      font-weight: 600;
+    }
+
+    .column-config input[type="number"] {
+      width: 5rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid var(--button-border);
+      background: var(--surface-color);
+      color: var(--text-color);
+      font-family: monospace;
+    }
+
+    .config-mode .column-config {
+      display: inline-flex;
+    }
+
     #configureBtn,
     #resetBtn,
     #themeToggle {
@@ -202,31 +226,39 @@
     <button id="configureBtn" type="button">Configure</button>
     <button id="resetBtn" type="button">Reset</button>
     <button id="themeToggle" type="button" aria-pressed="false">Dark mode</button>
+    <div class="column-config" id="columnConfig">
+      <label for="columnInput">Columns</label>
+      <input id="columnInput" type="number" min="1" max="20" inputmode="numeric" aria-label="Columns">
+    </div>
   </div>
 
   <div id="toast" class="toast"></div>
 
   <script>
     const storageKey = 'copychars.characters';
+    const columnStorageKey = 'copychars.columns';
     const themeStorageKey = 'copychars.theme';
     const root = document.documentElement;
     const configureBtn = document.getElementById('configureBtn');
     const controlsPanel = document.getElementById('controls');
     const charGrid = document.getElementById('charGrid');
+    const columnInput = document.getElementById('columnInput');
     const parseCssFloat = (value) => Number.isFinite(Number.parseFloat(value ?? '')) ? Number.parseFloat(value) : 0;
     const defaultCharacters = [
       '`', '^', '{', '}', '[', ']', ';', ':', '"', '|',
       '\\', '$', '(', ')', '<', '>', '¿', '?',
       '#', '&', '*', '=', '~', '_'
     ];
-    const columns = 5;
+    const defaultColumns = 5;
     const focusableSelector = 'a[href], area[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
     let characters = loadCharacters();
+    let columns = loadColumns();
     let configureMode = false;
     const gridBody = document.querySelector('#charGrid tbody');
     const themeToggleBtn = document.getElementById('themeToggle');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-    root.style.setProperty('--column-count', columns);
+    applyColumnCount(columns);
+    syncColumnInput();
     applyTheme(loadTheme());
     themeToggleBtn.addEventListener('click', toggleTheme);
     prefersDark.addEventListener('change', ({ matches }) => {
@@ -249,6 +281,12 @@
         }
       }
       return [...defaultCharacters];
+    }
+
+    function loadColumns() {
+      const saved = Number.parseInt(localStorage.getItem(columnStorageKey) ?? '', 10);
+      if (Number.isFinite(saved) && saved > 0) return saved;
+      return defaultColumns;
     }
 
     function renderGrid(list) {
@@ -313,6 +351,7 @@
       if (!configureMode) {
         configureMode = true;
         syncConfigureState();
+        syncColumnInput();
         focusFirstInput();
         return;
       }
@@ -354,10 +393,39 @@
         .sort((a, b) => Number(a.dataset.index) - Number(b.dataset.index))
         .map(input => input.value);
 
+      const nextColumns = readColumnInput();
+      if (!Number.isFinite(nextColumns) || nextColumns < 1) {
+        alert('Please enter a valid number of columns.');
+        columnInput?.focus();
+        return false;
+      }
+
       characters = nextValues;
+      columns = nextColumns;
       localStorage.setItem(storageKey, JSON.stringify(characters));
+      localStorage.setItem(columnStorageKey, String(columns));
+      applyColumnCount(columns);
       renderGrid(characters);
+      syncColumnInput();
       return true;
+    }
+
+    function readColumnInput() {
+      if (!columnInput) return columns;
+      const parsed = Number.parseInt(columnInput.value ?? '', 10);
+      if (!Number.isFinite(parsed)) return NaN;
+      return Math.min(20, Math.max(1, parsed));
+    }
+
+    function syncColumnInput() {
+      if (columnInput) {
+        columnInput.value = columns;
+      }
+    }
+
+    function setColumnCount(count) {
+      columns = count;
+      root.style.setProperty('--column-count', columns);
     }
 
     function updateCellSize(totalItems = characters.length) {
@@ -389,7 +457,11 @@
     function resetCharacters() {
       if (!confirm('Are you sure to reset?')) return;
       localStorage.removeItem(storageKey);
+      localStorage.removeItem(columnStorageKey);
       characters = [...defaultCharacters];
+      columns = defaultColumns;
+      applyColumnCount(columns);
+      syncColumnInput();
       renderGrid(characters);
     }
 
