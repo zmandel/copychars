@@ -247,7 +247,7 @@
     const defaultCharacters = [
       '`', '^', '{', '}', '[', ']', ';', ':', '"', '|',
       '\\', '$', '(', ')', '<', '>', '¿', '?',
-      '#', '&', '*', '=', '~', '_'
+      '#', '&', '*', '=', '~', '_', '/',
     ];
     const defaultColumns = 5;
     const focusableSelector = 'a[href], area[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -257,7 +257,7 @@
     const gridBody = document.querySelector('#charGrid tbody');
     const themeToggleBtn = document.getElementById('themeToggle');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-    applyColumnCount(columns);
+    setColumnCount(columns);
     syncColumnInput();
     applyTheme(loadTheme());
     themeToggleBtn.addEventListener('click', toggleTheme);
@@ -404,7 +404,7 @@
       columns = nextColumns;
       localStorage.setItem(storageKey, JSON.stringify(characters));
       localStorage.setItem(columnStorageKey, String(columns));
-      applyColumnCount(columns);
+      setColumnCount(columns);
       renderGrid(characters);
       syncColumnInput();
       return true;
@@ -460,7 +460,7 @@
       localStorage.removeItem(columnStorageKey);
       characters = [...defaultCharacters];
       columns = defaultColumns;
-      applyColumnCount(columns);
+      setColumnCount(columns);
       syncColumnInput();
       renderGrid(characters);
     }
