@@ -417,15 +417,17 @@
 
       const nextColumns = readColumnInput();
       const nextRows = readRowInput();
-      if (!Number.isFinite(nextColumns) || nextColumns < 1) {
-        alert('Please enter a valid number of columns.');
-        columnInput?.focus();
-        return false;
-      }
-      if (!Number.isFinite(nextRows) || nextRows < 1) {
-        alert('Please enter a valid number of rows.');
-        rowInput?.focus();
-        return false;
+      const dimensions = [
+        { value: nextColumns, name: 'columns', input: columnInput },
+        { value: nextRows, name: 'rows', input: rowInput }
+      ];
+
+      for (const { value, name, input } of dimensions) {
+        if (!Number.isFinite(value) || value < 1) {
+          alert(`Please enter a valid number of ${name}.`);
+          input?.focus();
+          return false;
+        }
       }
 
       characters = nextValues;
