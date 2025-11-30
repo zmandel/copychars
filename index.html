@@ -299,7 +299,7 @@
     function loadRows() {
       const saved = Number.parseInt(localStorage.getItem(rowStorageKey) ?? '', 10);
       if (Number.isFinite(saved) && saved > 0) return saved;
-      return Math.max(1, Math.ceil(characters.length / columns), defaultRows);
+      return Math.max(1, Math.ceil(characters.length / columns));
     }
 
     function normalizeCharacterGrid(values, columnCount, rowCount) {
