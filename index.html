@@ -155,7 +155,7 @@
     }
 
     .column-config label {
-      font-weight: 600;
+      font-size: 0.8rem;
     }
 
     .column-config input[type="number"] {
@@ -223,12 +223,12 @@
     <tbody></tbody>
   </table>
   <div class="controls" id="controls">
-    <button id="configureBtn" type="button">Configure</button>
+    <button id="configureBtn" type="button">⚙️</button>
     <button id="resetBtn" type="button">Reset</button>
-    <button id="themeToggle" type="button" aria-pressed="false">Dark mode</button>
+    <button id="themeToggle" type="button" aria-pressed="false">Dark</button>
     <div class="column-config" id="columnConfig">
-      <label for="columnInput">Columns</label>
-      <input id="columnInput" type="number" min="1" max="20" inputmode="numeric" aria-label="Columns">
+      <label for="columnInput">Columns:</label>
+      <input id="columnInput" type="number" min="1" max="20" inputmode="numeric" aria-label="Columns" style="width: 2.5rem;">
     </div>
   </div>
 
@@ -365,7 +365,7 @@
     function syncConfigureState() {
       document.body.classList.toggle('config-mode', configureMode);
       if (configureBtn) {
-        configureBtn.textContent = configureMode ? 'Done' : 'Configure';
+        configureBtn.textContent = configureMode ? 'Done' : '⚙️';
       }
     }
 
@@ -568,7 +568,7 @@
       root.dataset.theme = mode;
       if (!themeToggleBtn) return;
       const isDark = mode === 'dark';
-      themeToggleBtn.textContent = isDark ? 'Light mode' : 'Dark mode';
+      themeToggleBtn.textContent = isDark ? 'Light' : 'Dark';
       themeToggleBtn.setAttribute('aria-pressed', String(isDark));
     }
 
