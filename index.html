@@ -172,6 +172,14 @@
       display: inline-flex;
     }
 
+    .config-only {
+      display: none;
+    }
+
+    .config-mode .config-only {
+      display: inline-flex;
+    }
+
     #configureBtn,
     #resetBtn,
     #themeToggle {
@@ -223,15 +231,15 @@
     <tbody></tbody>
   </table>
   <div class="controls" id="controls">
-    <button id="configureBtn" type="button">⚙️</button>
-    <button id="resetBtn" type="button">Reset</button>
-    <button id="themeToggle" type="button" aria-pressed="false">Dark</button>
     <div class="column-config" id="columnConfig">
       <label for="rowInput">rows:</label>
       <input id="rowInput" type="number" min="1" max="20" inputmode="numeric" aria-label="Rows" style="width: 2.5rem;">
       <label for="columnInput">cols:</label>
       <input id="columnInput" type="number" min="1" max="20" inputmode="numeric" aria-label="Columns" style="width: 2.5rem;">
     </div>
+    <button id="resetBtn" class="config-only" type="button">Reset</button>
+    <button id="themeToggle" class="config-only" type="button" aria-pressed="false">Dark</button>
+    <button id="configureBtn" type="button">⚙️</button>
   </div>
 
   <div id="toast" class="toast"></div>
