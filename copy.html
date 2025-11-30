@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Copy</title>
+  <style>
+    :root {
+      --base-font: clamp(7px, 2vw + 10px, 18px);
+      --bg-color: #f0f0f0;
+      --text-color: #111;
+      --surface-color: #ffffff;
+      --button-border: #ccc;
+      --button-bg: #ffffff;
+      --button-hover: #e0e0e0;
+      --button-active: #d0d0d0;
+      --button-selected: #b5b5b5;
+      --button-text-color: #111;
+      --toast-bg: #333333;
+      --toast-color: #f5f5f5;
+    }
+
+    :root[data-theme="dark"] {
+      --bg-color: #0f1115;
+      --text-color: #f5f5f5;
+      --surface-color: #1c1f26;
+      --button-border: #3a3f4b;
+      --button-bg: #343c4a;
+      --button-hover: #475164;
+      --button-active: #161920;
+      --button-selected: #68738d;
+      --button-text-color: #ffffff;
+      --toast-bg: #f5f5f5;
+      --toast-color: #111111;
+    }
+
+    body {
+      font-family: sans-serif;
+      font-size: var(--base-font);
+      margin-left: 0.5rem;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    table {
+      width: clamp(200px, 80vw, 360px);
+      border-collapse: collapse;
+      table-layout: fixed;
+      margin-bottom: 1rem;
+    }
+
+    td {
+      width: 20%;
+    }
+
+    .key-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+    }
+
+    .copy-btn,
+    .edit-input {
+      width: 100%;
+      height: 100%;
+    }
+
+    .copy-btn {
+      font-size: clamp(5px, 10vw, 40px);
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      line-height: 1;
+      box-sizing: border-box;
+      overflow: hidden;
+      cursor: pointer;
+      background: var(--button-bg);
+      border: 1px solid var(--button-border);
+      color: var(--button-text-color);
+      border-radius: 5px;
+      font-family: monospace;
+      transition: background 0.3s ease, transform 0.1s ease;
+    }
+
+    .copy-btn:hover {
+      background: var(--button-hover);
+      transform: scale(1.05);
+    }
+
+    .copy-btn:active {
+      background: var(--button-active);
+      transform: scale(0.95);
+    }
+
+    .copy-btn.selected {
+      background: var(--button-selected);
+    }
+
+    .copy-btn.blank {
+      cursor: default;
+      pointer-events: none;
+      opacity: 0.45;
+      border-style: dashed;
+    }
+
+    .edit-input {
+      display: none;
+      padding: 0.25rem;
+      border-radius: 4px;
+      border: 1px solid var(--button-border);
+      background: var(--surface-color);
+      color: var(--text-color);
+      text-align: center;
+      font-family: monospace;
+      font-size: clamp(5px, 10vw, 40px);
+      box-sizing: border-box;
+      line-height: 1;
+    }
+
+    .config-mode .copy-btn {
+      display: none;
+    }
+
+    .config-mode .edit-input {
+      display: block;
+    }
+
+    #configureBtn,
+    #resetBtn,
+    #themeToggle {
+      background: var(--button-bg);
+      border: 1px solid var(--button-border);
+      color: var(--button-text-color);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    #configureBtn:hover,
+    #resetBtn:hover,
+    #themeToggle:hover {
+      background: var(--button-hover);
+    }
+
+    @keyframes fadeHighlight {
+      0% {
+        background: #cfe5ff;
+      }
+
+      100% {
+        background: white;
+      }
+    }
+
+    .toast {
+      position: fixed;
+      background: var(--toast-bg);
+      color: var(--toast-color);
+      padding: 10px 20px;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+  <table id="charGrid">
+    <tbody></tbody>
+  </table>
+  <button id="configureBtn">Configure</button>
+  <button id="resetBtn">Reset</button>
+  <button id="themeToggle" aria-pressed="false">Dark mode</button>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const storageKey = 'copychars.characters';
+    const themeStorageKey = 'copychars.theme';
+    const root = document.documentElement;
+    const configureBtn = document.getElementById('configureBtn');
+    const defaultCharacters = [
+      '`', '^', '{', '}', '[', ']', ';', ':', '"', '|',
+      '\\', '$', '(', ')', '<', '>', '¿', '?',
+      '#', '&', '*', '=', '~', '_'
+    ];
+    const columns = 5;
+    const focusableSelector = 'a[href], area[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    let characters = loadCharacters();
+    let configureMode = false;
+    const gridBody = document.querySelector('#charGrid tbody');
+    const themeToggleBtn = document.getElementById('themeToggle');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    applyTheme(loadTheme());
+    themeToggleBtn.addEventListener('click', toggleTheme);
+    prefersDark.addEventListener('change', ({ matches }) => {
+      if (localStorage.getItem(themeStorageKey)) return;
+      applyTheme(matches ? 'dark' : 'light');
+    });
+    renderGrid(characters);
+
+    function loadCharacters() {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            return parsed.map(String);
+          }
+        } catch (err) {
+          console.warn('Failed to parse saved characters.', err);
+        }
+      }
+      return [...defaultCharacters];
+    }
+
+    function renderGrid(list) {
+      gridBody.innerHTML = '';
+      list.forEach((char, idx) => {
+        if (idx % columns === 0) {
+          gridBody.appendChild(document.createElement('tr'));
+        }
+
+        const cell = document.createElement('td');
+        const wrapper = document.createElement('div');
+        wrapper.className = 'key-wrapper';
+        wrapper.dataset.index = idx;
+
+        const btn = document.createElement('button');
+        const isBlank = char === '';
+        btn.className = `copy-btn${isBlank ? ' blank' : ''}`;
+        btn.textContent = isBlank ? '\u200B' : char;
+        btn.dataset.index = idx;
+        btn.addEventListener('keydown', handleButtonArrowNav);
+        btn.onclick = (e) => {
+          if (isBlank) return;
+          copyChar(char, e);
+        };
+        if (isBlank) {
+          btn.setAttribute('aria-disabled', 'true');
+        }
+        wrapper.appendChild(btn);
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'edit-input';
+        input.dataset.index = idx;
+        input.value = char;
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            const nextIndex = (idx + 1) % characters.length;
+            focusSiblingInput(nextIndex);
+          } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            const nextIndex = idx - columns < 0 ? getWrapIndex(idx, false) : idx - columns;
+            focusSiblingInput(nextIndex);
+          } else if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            const nextIndex = idx + columns >= characters.length ? getWrapIndex(idx, true) : idx + columns;
+            focusSiblingInput(nextIndex);
+          }
+        });
+        wrapper.appendChild(input);
+        cell.appendChild(wrapper);
+        gridBody.lastElementChild.appendChild(cell);
+      });
+      syncConfigureState();
+    }
+
+    configureBtn.addEventListener('click', configureCharacters);
+    document.getElementById('resetBtn').addEventListener('click', resetCharacters);
+
+    function configureCharacters() {
+      if (!configureMode) {
+        configureMode = true;
+        syncConfigureState();
+        focusFirstInput();
+        return;
+      }
+
+      if (saveAllEdits()) {
+        configureMode = false;
+        syncConfigureState();
+      }
+    }
+
+    function syncConfigureState() {
+      document.body.classList.toggle('config-mode', configureMode);
+      if (configureBtn) {
+        configureBtn.textContent = configureMode ? 'Done' : 'Configure';
+      }
+    }
+
+    function focusFirstInput() {
+      const firstInput = document.querySelector('.edit-input');
+      if (!firstInput) return;
+      requestAnimationFrame(() => {
+        firstInput.focus();
+        firstInput.select();
+      });
+    }
+
+    function focusSiblingInput(index) {
+      const sibling = document.querySelector(`.edit-input[data-index="${index}"]`);
+      if (sibling) {
+        sibling.focus();
+        sibling.select();
+      }
+    }
+
+    function saveAllEdits() {
+      const inputs = Array.from(document.querySelectorAll('.edit-input'));
+      if (!inputs.length) return true;
+      const nextValues = inputs
+        .sort((a, b) => Number(a.dataset.index) - Number(b.dataset.index))
+        .map(input => input.value);
+
+      characters = nextValues;
+      localStorage.setItem(storageKey, JSON.stringify(characters));
+      renderGrid(characters);
+      return true;
+    }
+
+    function resetCharacters() {
+      if (!confirm('Are you sure to reset?')) return;
+      localStorage.removeItem(storageKey);
+      characters = [...defaultCharacters];
+      renderGrid(characters);
+    }
+
+    function copyChar(char, event) {
+      const target = event?.currentTarget;
+      navigator.clipboard.writeText(char).then(() => {
+        highlightButton(target);
+        showToast(`copied`, event.clientX, event.clientY);
+      }).catch(err => {
+        console.error('Failed to copy: ', err);
+      });
+    }
+
+    let btnHilite = null;
+    function highlightButton(btn) {
+      if (btnHilite) {
+        btnHilite.classList.remove('selected');
+      }
+      btnHilite = btn;
+      if (!btn) return;
+      btn.classList.add('selected');
+    }
+
+    function showToast(message, x, y) {
+      const toast = document.getElementById('toast');
+      toast.innerHTML = message;
+      // Position tooltip slightly offset from the cursor
+      toast.style.left = (x + 15) + 'px';
+      toast.style.top = (y + 15) + 'px';
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 300);
+    }
+
+    function handleButtonArrowNav(event) {
+      const { key, currentTarget } = event;
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)) return;
+      event.preventDefault();
+      const index = Number(currentTarget?.dataset.index);
+      if (Number.isNaN(index)) return;
+
+      let nextIndex = index;
+      switch (key) {
+        case 'ArrowLeft':
+          if (index % columns === 0) {
+            moveFocusByTab(currentTarget, false);
+            return;
+          }
+          nextIndex = index - 1;
+          break;
+        case 'ArrowRight':
+          if (index % columns === columns - 1 || index + 1 >= characters.length) {
+            moveFocusByTab(currentTarget, true);
+            return;
+          }
+          nextIndex = index + 1;
+          break;
+        case 'ArrowUp':
+          if (index < columns) {
+            nextIndex = getWrapIndex(index, false);
+          } else {
+            nextIndex = index - columns;
+          }
+          break;
+        case 'ArrowDown':
+          if (index + columns >= characters.length) {
+            nextIndex = getWrapIndex(index, true);
+          } else {
+            nextIndex = index + columns;
+          }
+          break;
+      }
+
+      const nextBtn = gridBody.querySelector(`button[data-index="${nextIndex}"]`);
+      nextBtn?.focus();
+    }
+
+    function moveFocusByTab(current, forward) {
+      const focusables = Array.from(document.querySelectorAll(focusableSelector));
+      const position = focusables.indexOf(current);
+      if (position === -1) return;
+      const next = focusables[position + (forward ? 1 : -1)];
+      next?.focus();
+    }
+
+    function getWrapIndex(index, forward) {
+      const column = index % columns;
+      if (forward) return column;
+      let wrapped = column;
+      while (wrapped + columns < characters.length) {
+        wrapped += columns;
+      }
+      return wrapped;
+    }
+
+    function loadTheme() {
+      const stored = localStorage.getItem(themeStorageKey);
+      if (stored === 'light' || stored === 'dark') return stored;
+      return prefersDark.matches ? 'dark' : 'light';
+    }
+
+    function applyTheme(mode) {
+      root.dataset.theme = mode;
+      if (!themeToggleBtn) return;
+      const isDark = mode === 'dark';
+      themeToggleBtn.textContent = isDark ? 'Light mode' : 'Dark mode';
+      themeToggleBtn.setAttribute('aria-pressed', String(isDark));
+    }
+
+    function toggleTheme() {
+      const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem(themeStorageKey, next);
+      applyTheme(next);
+    }
+  </script>
+</body>
+
+</html>
