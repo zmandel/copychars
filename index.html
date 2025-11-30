@@ -472,7 +472,7 @@
     }
 
     function updateCellSize() {
-      const rowCount = Math.max(1, rows || Math.ceil(characters.length / columns));
+      const rowCount = rows;
       const gridTop = charGrid?.getBoundingClientRect().top ?? 0;
       const controlsHeight = controlsPanel?.getBoundingClientRect().height ?? 0;
       const bodyStyles = window.getComputedStyle(document.body);
