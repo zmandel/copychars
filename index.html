@@ -8,6 +8,7 @@
   <style>
     :root {
       --base-font: clamp(7px, 2vh + 10px, 18px);
+      --cell-font: clamp(5px, calc(var(--cell-size) * 0.5), 40px);
       --bg-color: #f0f0f0;
       --text-color: #111;
       --surface-color: #ffffff;
@@ -79,7 +80,7 @@
     }
 
     .copy-btn {
-      font-size: clamp(5px, calc(var(--cell-size) * 0.5), 40px);
+      font-size: var(--cell-font);
       padding: 0.2rem;
       display: flex;
       flex-direction: column;
@@ -128,9 +129,19 @@
       color: var(--text-color);
       text-align: center;
       font-family: monospace;
-      font-size: clamp(5px, calc(var(--cell-size) * 0.5), 40px);
+      font-size: var(--cell-font);
       box-sizing: border-box;
       line-height: 1;
+    }
+
+    .copy-btn.size-30,
+    .edit-input.size-30 {
+      font-size: calc(var(--cell-font) * 0.7);
+    }
+
+    .copy-btn.size-60,
+    .edit-input.size-60 {
+      font-size: calc(var(--cell-font) * 0.4);
     }
 
     .config-mode .copy-btn {
@@ -331,9 +342,10 @@
         wrapper.className = 'key-wrapper';
         wrapper.dataset.index = idx;
 
+        const sizeClass = getLengthSizeClass(char);
         const btn = document.createElement('button');
         const isBlank = char === '';
-        btn.className = `copy-btn${isBlank ? ' blank' : ''}`;
+        btn.className = ['copy-btn', isBlank ? 'blank' : null, sizeClass].filter(Boolean).join(' ');
         btn.textContent = isBlank ? '\u200B' : char;
         btn.dataset.index = idx;
         btn.addEventListener('keydown', handleButtonArrowNav);
@@ -348,7 +360,7 @@
 
         const input = document.createElement('input');
         input.type = 'text';
-        input.className = 'edit-input';
+        input.className = `edit-input${sizeClass ? ` ${sizeClass}` : ''}`;
         input.dataset.index = idx;
         input.value = char;
         input.addEventListener('keydown', (event) => {
@@ -630,6 +642,13 @@
       const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
       localStorage.setItem(themeStorageKey, next);
       applyTheme(next);
+    }
+
+    function getLengthSizeClass(value) {
+      const len = (value ?? '').length;
+      if (len >= 5) return 'size-60';
+      if (len >= 3) return 'size-30';
+      return '';
     }
   </script>
 </body>
