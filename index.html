@@ -345,7 +345,7 @@
         const sizeClass = getLengthSizeClass(char);
         const btn = document.createElement('button');
         const isBlank = char === '';
-        btn.className = `copy-btn${isBlank ? ' blank' : ''}${sizeClass ? ` ${sizeClass}` : ''}`;
+        btn.className = ['copy-btn', isBlank ? 'blank' : null, sizeClass].filter(Boolean).join(' ');
         btn.textContent = isBlank ? '\u200B' : char;
         btn.dataset.index = idx;
         btn.addEventListener('keydown', handleButtonArrowNav);
