@@ -166,11 +166,11 @@
     }
 
     .column-config label {
-      font-size: 0.8rem;
+      font-size: 0.65rem;
     }
 
     .column-config input[type="number"] {
-      width: 5rem;
+      width: 1.9rem;
       padding: 0.25rem 0.5rem;
       border-radius: 4px;
       border: 1px solid var(--button-border);
@@ -242,15 +242,15 @@
     <tbody></tbody>
   </table>
   <div class="controls" id="controls">
+    <button id="configureBtn" type="button">⚙️</button>
     <div class="column-config" id="columnConfig">
       <label for="rowInput">rows:</label>
-      <input id="rowInput" type="number" min="1" max="20" inputmode="numeric" aria-label="Rows" style="width: 2.5rem;">
+      <input id="rowInput" type="number" min="1" max="20" inputmode="numeric" aria-label="Rows">
       <label for="columnInput">cols:</label>
-      <input id="columnInput" type="number" min="1" max="20" inputmode="numeric" aria-label="Columns" style="width: 2.5rem;">
+      <input id="columnInput" type="number" min="1" max="20" inputmode="numeric" aria-label="Columns">
+      <button id="themeToggle" type="button" aria-pressed="false">Dark</button>
+      <button id="resetBtn" type="button">Reset</button>
     </div>
-    <button id="resetBtn" class="config-only" type="button">Reset</button>
-    <button id="themeToggle" class="config-only" type="button" aria-pressed="false">Dark</button>
-<button id="configureBtn" type="button" title="Configure">⚙️</button>
   </div>
 
   <div id="toast" class="toast"></div>
@@ -394,7 +394,7 @@
         configureMode = true;
         syncConfigureState();
         syncGridInputs();
-        focusFirstInput();
+        //focusFirstInput();
         return;
       }
 
@@ -645,12 +645,14 @@
     }
 
     function getLengthSizeClass(value) {
+      //TODO: find the length of the largest word
+
       const len = (value ?? '').length;
+      if (len > 80) 
       if (len >= 5) return 'size-60';
       if (len >= 3) return 'size-30';
       return '';
     }
   </script>
 </body>
-
 </html>
