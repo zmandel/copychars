@@ -645,10 +645,12 @@
     }
 
     function getLengthSizeClass(value) {
-      //TODO: find the length of the largest word
-
-      const len = (value ?? '').length;
-      if (len > 80) 
+      const str = value ?? '';
+      const words = str.split(/\s+/).filter(w => w.length > 0);
+      const maxWordLength = words.length > 0 ? Math.max(...words.map(word => word.length)) : 0;
+      const len = maxWordLength;
+      
+      if (len > 80) return 'size-60';
       if (len >= 5) return 'size-60';
       if (len >= 3) return 'size-30';
       return '';
