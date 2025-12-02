@@ -71,6 +71,9 @@
     .key-wrapper {
       position: relative;
       height: var(--cell-size);
+      align-items: center;
+      justify-content: center;
+      z-index: 0;
     }
 
     .copy-btn,
@@ -131,17 +134,26 @@
       font-family: monospace;
       font-size: var(--cell-font);
       box-sizing: border-box;
-      line-height: 1;
+      line-height: 1.1;
+      resize: none;
+      overflow: hidden;
+      white-space: pre-wrap;
+      word-break: break-word;
+      height: auto;
+      min-height: 0;
+      field-sizing: content;
     }
 
-    .copy-btn.size-30,
-    .edit-input.size-30 {
-      font-size: calc(var(--cell-font) * 0.7);
+    .size-tiny {
+      font-size: calc(var(--cell-font) * 0.2);
     }
 
-    .copy-btn.size-60,
-    .edit-input.size-60 {
+    .size-small {
       font-size: calc(var(--cell-font) * 0.4);
+    }
+
+    .size-medium {
+      font-size: calc(var(--cell-font) * 0.6);
     }
 
     .config-mode .copy-btn {
@@ -150,6 +162,11 @@
 
     .config-mode .edit-input {
       display: block;
+      overflow-y: hidden;
+    }
+
+    .config-mode .key-wrapper.is-focused {
+      z-index: 20;
     }
 
     .controls {
@@ -234,6 +251,11 @@
     .toast.show {
       opacity: 1;
     }
+
+    .multi-line {
+      align-items: flex-start;
+      justify-content: flex-start;
+    }
   </style>
 </head>
 
@@ -275,6 +297,8 @@
     const defaultColumns = 5;
     const defaultRows = Math.ceil(defaultCharacters.length / defaultColumns);
     const focusableSelector = 'a[href], area[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const sizeClasses = ['size-tiny', 'size-small', 'size-medium'];
+    const supportsFieldSizing = typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('field-sizing', 'content');
     let characters = loadCharacters();
     let columns = loadColumns();
     let rows = loadRows();
@@ -342,10 +366,13 @@
         wrapper.className = 'key-wrapper';
         wrapper.dataset.index = idx;
 
-        const sizeClass = getLengthSizeClass(char);
         const btn = document.createElement('button');
         const isBlank = char === '';
-        btn.className = ['copy-btn', isBlank ? 'blank' : null, sizeClass].filter(Boolean).join(' ');
+        btn.className = 'copy-btn';
+        if (isBlank) {
+          btn.classList.add('blank');
+        }
+        applySizeClass(btn, char);
         btn.textContent = isBlank ? '\u200B' : char;
         btn.dataset.index = idx;
         btn.addEventListener('keydown', handleButtonArrowNav);
@@ -357,12 +384,31 @@
           btn.setAttribute('aria-disabled', 'true');
         }
         wrapper.appendChild(btn);
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = `edit-input${sizeClass ? ` ${sizeClass}` : ''}`;
+        const input = document.createElement('textarea');
+        input.className = 'edit-input';
+        applySizeClass(input, char);
         input.dataset.index = idx;
         input.value = char;
+        input.rows = 1;
+        input.wrap = 'soft';
+        input.spellcheck = false;
+        autoResizeInput(input);
+        input.addEventListener('focus', (event) => {
+          const target = event.currentTarget;
+          if (!(target instanceof HTMLTextAreaElement)) return;
+          toggleWrapperFocus(target, true);
+        });
+        input.addEventListener('blur', (event) => {
+          const target = event.currentTarget;
+          if (!(target instanceof HTMLTextAreaElement)) return;
+          toggleWrapperFocus(target, false);
+        });
+        input.addEventListener('input', (event) => {
+          const target = event.currentTarget;
+          if (!(target instanceof HTMLTextAreaElement)) return;
+          applySizeClass(target, target.value);
+          autoResizeInput(target);
+        });
         input.addEventListener('keydown', (event) => {
           if (event.key === 'Enter') {
             event.preventDefault();
@@ -381,11 +427,27 @@
         wrapper.appendChild(input);
         cell.appendChild(wrapper);
         gridBody.lastElementChild.appendChild(cell);
+        function isOverflowing(el) {
+          return el.scrollWidth > cell.clientWidth || el.scrollHeight > cell.clientHeight;
+        }
+
+        queueMicrotask(() => {
+        if (isOverflowing(btn)) {
+          btn.classList.add('multi-line');
+        } else {
+          btn.classList.remove('multi-line');
+        }
+      });
       });
       syncConfigureState();
       updateCellSize();
     }
 
+    function toggleWrapperFocus(element, focused) {
+      const wrapper = element?.closest?.('.key-wrapper');
+      if (!wrapper) return;
+      wrapper.classList.toggle('is-focused', Boolean(focused));
+    }
     configureBtn.addEventListener('click', configureCharacters);
     document.getElementById('resetBtn').addEventListener('click', resetCharacters);
 
@@ -394,7 +456,6 @@
         configureMode = true;
         syncConfigureState();
         syncGridInputs();
-        //focusFirstInput();
         return;
       }
 
@@ -644,13 +705,37 @@
       applyTheme(next);
     }
 
-    function getLengthSizeClass(value) {
-      //TODO: find the length of the largest word
+    function autoResizeInput(element) {
+      if (!element || supportsFieldSizing) return;
+      element.style.height = 'auto';
+      element.style.height = `${element.scrollHeight}px`;
+    }
 
-      const len = (value ?? '').length;
-      if (len > 80) 
-      if (len >= 5) return 'size-60';
-      if (len >= 3) return 'size-30';
+    function applySizeClass(element, value) {
+      if (!element) return;
+      element.classList.remove(...sizeClasses);
+      const next = getLengthSizeClass(value);
+      if (next) {
+        element.classList.add(next);
+      }
+    }
+
+    function getLengthSizeClass(value) {
+      const str = value ?? '';
+      const words = str.split(/\s+/).filter(w => w.length > 0);
+      const maxWordLength = words.length > 0 ? Math.max(...words.map(word => word.length)) : 0;
+      const lenWord = maxWordLength;
+      const lenAll = (value ?? '').length;
+
+      if (lenAll > 60 || lenWord >= 13)
+       return 'size-tiny';
+
+      if (lenAll >= 30 || lenWord >= 7)
+        return 'size-small';
+
+      if (lenAll >= 10 || lenWord > 3)
+        return 'size-medium';
+
       return '';
     }
   </script>
