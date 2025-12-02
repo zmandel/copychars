@@ -431,13 +431,15 @@
           return el.scrollWidth > cell.clientWidth || el.scrollHeight > cell.clientHeight;
         }
 
-        queueMicrotask(() => {
-        if (isOverflowing(btn)) {
-          btn.classList.add('multi-line');
-        } else {
-          btn.classList.remove('multi-line');
-        }
-      });
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (isOverflowing(btn)) {
+              btn.classList.add('multi-line');
+            } else {
+              btn.classList.remove('multi-line');
+            }
+          });
+        });
       });
       syncConfigureState();
       updateCellSize();
