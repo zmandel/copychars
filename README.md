@@ -4,6 +4,7 @@ Can be used as a tab on your laptop, or enable clipboard sync between your phone
 Run from https://zmandel.github.io/copychars/  
 - Configure texts, number of rows and columns, light and dark mode. 
 - No data is sent outside the browser.  
+- add to your phone homepage
 
 To configure clipboard Sync:
 - (Mac)[https://support.apple.com/en-us/102430]
