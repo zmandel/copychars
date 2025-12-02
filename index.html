@@ -705,6 +705,7 @@
       applyTheme(next);
     }
 
+
     function autoResizeInput(element) {
       if (!element || supportsFieldSizing) return;
       element.style.height = 'auto';
@@ -720,10 +721,12 @@
       }
     }
 
+
     function getLengthSizeClass(value) {
       const str = value ?? '';
       const words = str.split(/\s+/).filter(w => w.length > 0);
       const maxWordLength = words.length > 0 ? Math.max(...words.map(word => word.length)) : 0;
+
       const lenWord = maxWordLength;
       const lenAll = (value ?? '').length;
 
@@ -735,7 +738,6 @@
 
       if (lenAll >= 10 || lenWord > 3)
         return 'size-medium';
-
       return '';
     }
   </script>
