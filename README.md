@@ -17,4 +17,4 @@ Run from https://zmandel.github.io/copychars/
 ![Screenshot](https://zmandel.github.io/copychars/screenshot.png)
 
 ## Licence
-MIT
+[MIT Licence](/LICENSE)
