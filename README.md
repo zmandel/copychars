@@ -6,9 +6,13 @@
 ## Setup
 Run from https://zmandel.github.io/copychars/  
 - Configure texts, number of rows and columns, light and dark mode. 
-- Use case 1: Set it to 13 rows x 3 columns.
-- Use case 2: add to your phone homepage. Use the default 5 rows x 5 columns.
-- No data is sent outside the browser.
+- Use case "Chrome split view pane":
+  - Works well with a narrow split view and 13 rows x 3 columns.
+  - Add it to your Chrome bookmark bar.
+- Use case "Phone to Laptop":
+  - Add to your phone homepage.
+  - Configure sync.
+- No data is sent outside the browser. Works offline: save the html file to your device.
 
 ## Configure clipboard Sync
 - [Mac](https://support.apple.com/en-us/102430)
