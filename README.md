@@ -19,7 +19,12 @@ Run from https://zmandel.github.io/copychars/
 - [Mac](https://support.apple.com/en-us/102430)
 - [Windows](https://support.microsoft.com/en-us/topic/seamlessly-transfer-content-between-your-devices-8a0ead3c-2f15-1338-66ca-70cf4ae81fcb) with the official "Link to Windows" app for Android.
 <br><br>
+
+## Phone view
 ![Screenshot](https://zmandel.github.io/copychars/screenshot.png)
+
+## Split tab view
+![Screenshot](https://zmandel.github.io/copychars/s2.png)
 
 ## Licence
 [MIT Licence](/LICENSE)
