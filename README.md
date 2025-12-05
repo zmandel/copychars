@@ -9,6 +9,7 @@ Run from https://zmandel.github.io/copychars/
 - Use case "Chrome split view pane":
   - Works well with a narrow split view and 13 rows x 3 columns.
   - Add it to your Chrome bookmark bar.
+  - Open as a [split view](https://youtu.be/qw5oDJNP1Vg?si=CbtblwBdrNja5-i9&t=51).
 - Use case "Phone to Laptop":
   - Add to your phone homepage.
   - Configure sync.
