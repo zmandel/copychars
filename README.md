@@ -13,7 +13,8 @@ Run from https://zmandel.github.io/copychars/
 - Use case "Phone to Laptop":
   - Add to your phone homepage.
   - Configure sync.
-- No data is sent outside the browser. Works offline: save the html file to your device.
+- No data is sent outside the browser.
+- Works offline: save the html file to your device.
 
 ## Configure clipboard Sync
 - [Mac](https://support.apple.com/en-us/102430)
