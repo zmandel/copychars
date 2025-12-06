@@ -14,7 +14,7 @@ Run from https://zmandel.github.io/copychars/
   - Add to your phone homepage.
   - Configure sync.
 - No data is sent outside the browser.
-- Works offline: save the html file to your device.
+- Works offline: save the html file to your device, or use directly from the GitHub link.
 
 ## Configure clipboard Sync
 - [Mac](https://support.apple.com/en-us/102430)
