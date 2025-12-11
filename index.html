@@ -240,8 +240,9 @@
       position: fixed;
       background: var(--toast-bg);
       color: var(--toast-color);
-      padding: 10px 20px;
-      border-radius: 4px;
+      padding: 7px 14px;
+      border-radius: 3px;
+      font-size: 70%;
       opacity: 0;
       transition: opacity 0.3s;
       pointer-events: none;
@@ -617,10 +618,18 @@
     function showToast(message, x, y) {
       const toast = document.getElementById('toast');
       toast.innerHTML = message;
-      // Position tooltip slightly offset from the cursor
-      toast.style.left = (x + 15) + 'px';
-      toast.style.top = (y + 15) + 'px';
       toast.classList.add('show');
+
+      requestAnimationFrame(() => {
+        const rect = toast.getBoundingClientRect();
+        const offset = 12;
+        const margin = 8;
+        const nextLeft = Math.min(Math.max(margin, x + offset), window.innerWidth - rect.width - margin);
+        const nextTop = Math.min(Math.max(margin, y + offset), window.innerHeight - rect.height - margin);
+        toast.style.left = `${nextLeft}px`;
+        toast.style.top = `${nextTop}px`;
+      });
+
       setTimeout(() => {
         toast.classList.remove('show');
       }, 300);
